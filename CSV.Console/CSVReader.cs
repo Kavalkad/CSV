@@ -40,64 +40,60 @@ namespace CSV
                 writer.WriteLine("Timestamp,Instrument, Bid, Ask");
                 for (int i = 0; i < 10; i++)
                 {
-                    writer.WriteLine($"{rand.NextInt64(CSVReader.DateTimeToUnix(date), 
+                    writer.WriteLine($"{rand.NextInt64(CSVReader.DateTimeToUnix(date),
                         CSVReader.DateTimeToUnix(expectedTime))}, {instruments[rand.Next(100)]}, {rand.Next(1, 100)}, {rand.Next(1, 500)}");
                 }
             }
-            Console.WriteLine("Operation succeed"); 
 
-            
+
+
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
                 PrepareHeaderForMatch = args => args.Header.Trim(),
             };
-                     
+
             List<CSVOutput> output;
+            List<string> content = new List<string>();
+
             using (var reader = new StreamReader(@"D:\Output\gveupvbhce.csv"))
             using (var csvReader = new CsvReader(reader, config))
             {
                 var records = csvReader.GetRecords<CSVReader>();
                 output = (from record in records
-                                           orderby record.Timestamp
-                                           select new CSVOutput
-                                           {
-                                               TimeStamp = CSVReader.UnixToDateTime(record.Timestamp).ToString("yyyy-MM-dd hh:mm:ss.fff"),
-                                               Instrument = record.Instrument.Trim(),
-                                               Bid = record.Bid,
-                                               Ask = record.Ask
-                                           })
-                                           .ToList();
+                          orderby record.Timestamp
+                          select new CSVOutput
+                          {
+                              TimeStamp = CSVReader.UnixToDateTime(record.Timestamp).ToString("yyyy-MM-dd hh:mm:ss.fff"),
+                              Instrument = record.Instrument.Trim(),
+                              Bid = record.Bid,
+                              Ask = record.Ask
+                          }).ToList();
+
 
             }
-            foreach (var record in output)
+            Thread myThread = new Thread(() =>
             {
-                var dateTime = DateTime.Parse(record.TimeStamp);
-                var roundedDT = dateTime.AddMinutes(-dateTime.Minute)
-                                        .AddSeconds(-dateTime.Second)
-                                        .AddMilliseconds(-dateTime.Millisecond);
-                var path = @$"D:\Yield\{roundedDT.Year}-{roundedDT.Month}-{roundedDT.Day}-{roundedDT.Hour}_{record.Instrument.Trim()}.csv";
 
-                if (!File.Exists(path))
+                foreach (var record in output)
                 {
-                    using (var writer = new StreamWriter(path))
-                    using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+                    var dateTime = DateTime.Parse(record.TimeStamp);
+
+                    var path = @$"D:\Yield\{dateTime.Year}-{dateTime.Month}-{dateTime.Day}-{dateTime.Hour}_{record.Instrument.Trim()}.csv";
+                    if (!File.Exists(path))
                     {
-                        csv.WriteHeader<CSVOutput>();
-                        csv.NextRecord();
-                        csv.WriteRecord(record);                        
+                        using (File.Create(path)) { };
+                        File.AppendAllText(path, "TimeStamp,Instrument,Bid,Ask");
+                        File.AppendAllText(path, CSVOutput.GetString(record));
+                    }
+                    else
+                    {
+                        File.AppendAllText(path, CSVOutput.GetString(record));
                     }
                 }
-                else
-                {
-                    using (var writer = new StreamWriter(path, true))
-                    using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
-                    {
-                        csv.NextRecord();
-                        csv.WriteRecord(record);
-                        
-                    }
-                }
-            }
+            });
+            myThread.Start();
+
+
         }
     }
 }

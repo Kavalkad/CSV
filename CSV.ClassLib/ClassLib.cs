@@ -79,6 +79,15 @@
             get { return _ask; }
             set { _ask = value; }
         }
+        public static string GetString(CSVOutput csv)
+        {
+            return $"\n{csv.TimeStamp},{csv.Instrument},{csv.Bid},{csv.Ask}";
+        }
+    }
+    public class Writer
+    {
+        private Thread _thread;
+        private CSVOutput _output;
     }
 
 }
