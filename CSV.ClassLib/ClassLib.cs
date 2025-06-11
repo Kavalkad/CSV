@@ -84,11 +84,6 @@
             return $"\n{csv.TimeStamp},{csv.Instrument},{csv.Bid},{csv.Ask}";
         }
     }
-    public class Writer
-    {
-        private Thread _thread;
-        private CSVOutput _output;
-    }
 
 }
 
